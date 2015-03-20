@@ -1,4 +1,4 @@
-import  gtestgen.core
+import gtestgen.core
 import unittest
 
 class TemplateFileTest(unittest.TestCase):
@@ -7,6 +7,13 @@ class TemplateFileTest(unittest.TestCase):
         t = gtestgen.core.TemplateFile('TemplateFileTest.tpl')
         self.assertIsNotNone(t.template)
         self.assertIsNotNone(t.file_name)
+        
+    def test_constructor_failed(self):
+        try:
+            t = gtestgen.core.TemplateFile('this_file_does_not_exist')
+            self.fail()
+        except gtestgen.core.TemplateNotFoundException:
+            pass
         
     def test_template(self):
         t = gtestgen.core.TemplateFile('TemplateFileTest.tpl')
@@ -76,5 +83,12 @@ class TestTitleTest(unittest.TestCase):
         t = gtestgen.core.TestTitle('title')
         self.assertEqual('__TITLE_H__', t.macro_name)
         
+      
+class EngineTest(unittest.TestCase):
+    
+    def test_constructor(self):
+        engine = gtestgen.core.Engine(None, None)
+
+            
 if __name__ == '__main__':
     unittest.main()

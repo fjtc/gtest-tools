@@ -1,15 +1,35 @@
 from string import Template
+import os.path
 import re
 
+class TemplateNotFoundException(Exception):
+    
+    def __init__(self, message, cause):
+        Exception.__init__(self, message, cause)
+
+class FileExistsException(Exception):
+    
+    def __init__(self, message, cause):
+        Exception.__init__(self, message, cause)
+
 class TemplateFile:
+    """
+    This class implements a template file.
+    """
     
     def __init__(self, file_name):
+        """
+        """
         self._file_name = file_name
         self._load_file(file_name)
         
     def _load_file(self, file_name):
-        with open(file_name, 'r') as inp:
-            self._template = Template(inp.read())
+        
+        try:
+            with open(file_name, 'r') as inp:
+                self._template = Template(inp.read())
+        except Exception as e:
+            raise TemplateNotFoundException('Template "{0}" not found.'.format(file_name), e) 
 
     @property
     def template(self):
@@ -48,4 +68,85 @@ class TestTitle:
     @property
     def macro_name(self):
         return '__' + self.header_name.upper().replace('.', '_') + '__' 
+    
+class Engine:
+    
+    MAIN_TEMPLATE='main.cpp.tpl'
+    HEADER_TEMPLATE='test.h.tpl'
+    SOURCE_TEMPLATE='test.cpp.tpl'
+    
+    def __init__(self, output_dir, template_dir):
+        self.output_dir = output_dir
+        pass;
+    
+    @property
+    def output_dir(self):
+        return self._output_dir
+    
+    @output_dir.setter
+    def set_output_dir(self, v):
+        """
+        Sets the output directory.
+        
+        @param v: The output directory. If v points to a file, the output directory will be
+        the same of the given file. If None, the current directory will be used.
+        @type v: string  
+        """        
+        if (v == None):
+            dir_ = os.path.abspath('.')
+        else:
+            v = os.path.abspath(v)
+            if os.path.isdir(v):
+                dir_ = v
+            else:
+                dir_ = os.path.pardir(v)
+        self._output_dir = dir_
+    
+    @property
+    def template_dir(self):
+        return self._template_dir
+    
+    @template_dir.setter
+    def set_template_dir(self, v):
+        """
+        Sets the template directory.
+        
+        @param v: The directory that contains the templates. If None, it will be
+        set to the directory of this module.
+        @type v: string  
+        """        
+        if v == None:
+            dir_ = os.path.abspath(os.path.pardir(__file__))
+        else:
+            dir_ = os.path.abspath(v)
+            if not os.path.isdir(dir_):
+                raise Exception('"{0}" is not a directory.'.format(dir_))
+        self._template_dir = dir_
+        
+    def _get_template_file(self, file_name):
+        return os.path.join(self.template_dir, file_name)
+    
+    def _save_file(self, file_name, content):
+        file_name = os.path.join(self.output_dir, file_name)
+        if os.path.exists(file_name):
+            raise FileExistsException('File "{0}" already exists.'.format(file_name))
+        else:
+            with open(file_name, 'w') as outp:
+                outp.write(content)
+    
+    def generate_main(self):
+        t = TemplateFile(self._get_template_file(Engine.MAIN_TEMPLATE))
+        content = t.process({})
+        self._save_file('main.cpp', content)
+        
+    def generate_test(self, test_name):
+        
+        title = TestTitle(test_name)
+        if not title.is_valid_identifier:
+            raise ValueError('The name {0} is not valid.'.format(test_name))
+        t = TemplateFile(self._get_template_file(Engine.MAIN_TEMPLATE))
+        content = t.process({})
+        self._save_file('main.cpp', content)        
+        
+        
     
