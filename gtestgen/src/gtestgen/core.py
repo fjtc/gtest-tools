@@ -4,15 +4,15 @@ import re
 
 class TemplateNotFoundException(Exception):
     
-    def __init__(self, message, cause):
+    def __init__(self, message, cause = None):
         Exception.__init__(self, message, cause)
 
 class FileExistsException(Exception):
     
-    def __init__(self, message, cause):
+    def __init__(self, message, cause = None):
         Exception.__init__(self, message, cause)
 
-class TemplateFile:
+class TemplateFile(object):
     """
     This class implements a template file.
     """
@@ -42,7 +42,7 @@ class TemplateFile:
     def process(self, params):
         return self._template.safe_substitute(params)
 
-class TestTitle:
+class TestTitle(object):
     
     IDENTIFIER_PATTERN = re.compile('^[_a-zA-Z][_a-zA-Z0-9]*$')
     
@@ -69,7 +69,7 @@ class TestTitle:
     def macro_name(self):
         return '__' + self.header_name.upper().replace('.', '_') + '__' 
     
-class Engine:
+class Engine(object):
     
     MAIN_TEMPLATE='main.cpp.tpl'
     HEADER_TEMPLATE='test.h.tpl'
@@ -77,6 +77,7 @@ class Engine:
     
     def __init__(self, output_dir, template_dir):
         self.output_dir = output_dir
+        self.template_dir = template_dir
         pass;
     
     @property
@@ -84,7 +85,7 @@ class Engine:
         return self._output_dir
     
     @output_dir.setter
-    def set_output_dir(self, v):
+    def output_dir(self, v):
         """
         Sets the output directory.
         
@@ -99,7 +100,7 @@ class Engine:
             if os.path.isdir(v):
                 dir_ = v
             else:
-                dir_ = os.path.pardir(v)
+                dir_ = os.path.dirname(v)
         self._output_dir = dir_
     
     @property
@@ -107,7 +108,7 @@ class Engine:
         return self._template_dir
     
     @template_dir.setter
-    def set_template_dir(self, v):
+    def template_dir(self, v):
         """
         Sets the template directory.
         
@@ -116,11 +117,11 @@ class Engine:
         @type v: string  
         """        
         if v == None:
-            dir_ = os.path.abspath(os.path.pardir(__file__))
+            dir_ = os.path.abspath(os.path.dirname(__file__))
         else:
             dir_ = os.path.abspath(v)
             if not os.path.isdir(dir_):
-                raise Exception('"{0}" is not a directory.'.format(dir_))
+                raise TemplateNotFoundException('"{0}" is not a directory.'.format(dir_))
         self._template_dir = dir_
         
     def _get_template_file(self, file_name):
@@ -144,9 +145,18 @@ class Engine:
         title = TestTitle(test_name)
         if not title.is_valid_identifier:
             raise ValueError('The name {0} is not valid.'.format(test_name))
-        t = TemplateFile(self._get_template_file(Engine.MAIN_TEMPLATE))
-        content = t.process({})
-        self._save_file('main.cpp', content)        
         
+        # Generate the argument list
+        args = {'TEST_NAME': title.name, 
+                'FILE_MACRO': title.macro_name,
+                'HEADER_NAME': title.header_name,
+                'SOURCE_NAME': title.source_name}
         
+        t = TemplateFile(self._get_template_file(Engine.HEADER_TEMPLATE))
+        content = t.process(args)
+        self._save_file(title.header_name, content)     
+        
+        t = TemplateFile(self._get_template_file(Engine.SOURCE_TEMPLATE))
+        content = t.process(args)
+        self._save_file(title.source_name, content)        
     

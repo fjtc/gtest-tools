@@ -1,5 +1,7 @@
 import gtestgen.core
 import unittest
+import os.path
+from gtestgen.core import FileExistsException
 
 class TemplateFileTest(unittest.TestCase):
 
@@ -85,10 +87,96 @@ class TestTitleTest(unittest.TestCase):
         
       
 class EngineTest(unittest.TestCase):
+        
+    def get_output_dir(self):     
+        outdir = os.path.join('.', 'tmp')
+        if not os.path.isdir(outdir):
+            os.mkdir(outdir)
+        return outdir
+    
+    def clear_output_dir(self):
+        outdir = self.get_output_dir()
+        
+        for f in os.listdir(outdir):
+            path = os.path.join(outdir, f)
+            os.remove(path)
     
     def test_constructor(self):
         engine = gtestgen.core.Engine(None, None)
+        self.assertIsNotNone(engine.output_dir)
+        self.assertIsNotNone(engine.template_dir)
+        
+    def test_output_dir(self):
+        engine = gtestgen.core.Engine(None, None)
+        self.assertEqual(os.path.abspath('.'), engine.output_dir)
+        
+        engine.output_dir = '.'
+        self.assertEqual(os.path.abspath('.'), engine.output_dir)
+                
+        engine.output_dir = '/opt'
+        self.assertEqual('/opt', engine.output_dir)
 
+        engine.output_dir = __file__
+        self.assertEqual(os.path.dirname(os.path.abspath(__file__)), engine.output_dir)
+        
+    def test_template_dir(self):
+        engine = gtestgen.core.Engine(None, None)
+        
+        self.assertEqual(os.path.dirname(gtestgen.core.__file__), engine.template_dir)
+        
+        engine.template_dir = None
+        self.assertEqual(os.path.dirname(gtestgen.core.__file__), engine.template_dir)
+        
+        engine.template_dir = '.'
+        self.assertEqual(os.path.abspath('.'), engine.template_dir)
+        
+        try:
+            engine.template_dir = __file__
+            self.fail()
+        except gtestgen.core.TemplateNotFoundException:
+            pass
+        
+    def test_generate_main(self):
+        
+        outdir = self.get_output_dir()
+        self.clear_output_dir()
+        
+        engine = gtestgen.core.Engine(outdir, os.path.dirname(__file__))        
+        engine.generate_main()
+
+        # Test duplicated file        
+        try:
+            engine.generate_main()
+            self.fail()
+        except gtestgen.core.FileExistsException:
+            pass
+        
+    def test_generate_test(self):
+        
+        outdir = self.get_output_dir()
+        self.clear_output_dir()
+        
+        engine = gtestgen.core.Engine(outdir, os.path.dirname(__file__))
+        engine.generate_test('test_name')
+
+        # Test duplicated file        
+        try:
+            engine.generate_test('test_name')
+            self.fail()
+        except gtestgen.core.FileExistsException:
+            pass
+        
+    def test_generate_test_invalid_name(self):
+        
+        outdir = self.get_output_dir()
+        self.clear_output_dir()
+        
+        engine = gtestgen.core.Engine(outdir, os.path.dirname(__file__))
+        try:
+            engine.generate_test('00000')
+            self.fail()
+        except ValueError:
+            pass
             
 if __name__ == '__main__':
     unittest.main()
