@@ -27,11 +27,16 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from Tkinter import *
 from tkMessageBox import *
+import gtestgen.core
+import os.path
 
 class GTestGenGUI(Frame):
     
-    def __init__(self, master=None):
+    def __init__(self, output_dir, master=None):
         Frame.__init__(self, master)
+        
+        self.engine = gtestgen.core.Engine(output_dir, os.path.dirname(__file__)) 
+
         self.pack()
         self.createUI()
     
@@ -60,7 +65,7 @@ class GTestGenGUI(Frame):
         self.grid(column=0, row=0, sticky=(N, W, E, S))
 
         self._test_name_label = Label(self)
-        self._test_name_label['text'] = 'Test name (must be a valid C identifier.)'
+        self._test_name_label['text'] = 'Test name (must be a valid C identifier)'
         self._test_name_label.grid(column = 0, row = 0, columnspan=3, sticky=(E,W))
         
         self._test_name_entry = Entry(self)
@@ -77,17 +82,29 @@ class GTestGenGUI(Frame):
         self._cancel_button.grid(column = 2, row = 2, sticky=(E,W))
         
         self._test_status_label = Label(self)
-        self._test_status_label['text'] = 'Test name (must be a valid C identifier.)'
+        self._test_status_label['text'] = self.engine.output_dir
         self._test_status_label.grid(column = 0, row = 3, columnspan=3, sticky=(E,W))
         
     def _do_generate_main(self):
-        pass
-    
+        try:
+            self.engine.generate_main()
+            showinfo('Generate main', 'main.cpp generated.')
+        except Exception as e:
+            showerror('Generate main', str(e))
+            
     def do_generate_test(self):
-        pass
+        test_name = self._test_name_entry.get().strip()
+        if len(test_name) > 0:
+            try:
+                self.engine.generate_test(test_name)
+                showinfo('Generate test', 'Test generated.')
+            except ValueError:
+                showerror('Generate test', 'Invalid test name.')
+            except Exception as e:
+                showerror('Generate test', str(e))
 
     def _do_about(self):
-        showinfo('OK', ('gtestgen 0.1\n' + 
+        showinfo('gtestgengui', ('gtestgengui 0.1\n' + 
                         'Copyright (c) 2015, FJTC.\n' + 
                         'All rights reserved.\n' +
                         'This software is licensed under Modified BSD License'))
@@ -96,7 +113,12 @@ class GTestGenGUI(Frame):
 if __name__ == '__main__':
     root = Tk()
     root.wm_title('gtestgen')
-    app = GTestGenGUI(master=root)
+    
+    if len(sys.argv) > 1:
+        outdir = sys.argv[2]
+    else:
+        outdir = None
+    app = GTestGenGUI(outdir, master=root)
     app.mainloop()
     #root.destroy()
         
