@@ -25,10 +25,20 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Tkinter import *
-from tkMessageBox import *
+import sys
 import gtestgen.core
 import os.path
+
+# Import the correct tkinter modules according to the python version.
+if sys.version_info.major == 2:
+    from Tkinter import *
+    from tkMessageBox import *
+elif sys.version_info.major == 3:
+    from tkinter import *
+    from tkinter.messagebox import *
+else:
+    raise exception('Unsupported Python version.');
+
 
 class GTestGenGUI(Frame):
     
@@ -104,7 +114,7 @@ class GTestGenGUI(Frame):
                 showerror('Generate test', str(e))
 
     def _do_about(self):
-        showinfo('gtestgengui', ('gtestgengui 0.1\n' + 
+        showinfo('gtestgengui', ('gtestgengui 0.2\n' + 
                         'Copyright (c) 2015, FJTC.\n' + 
                         'All rights reserved.\n' +
                         'This software is licensed under Modified BSD License'))
