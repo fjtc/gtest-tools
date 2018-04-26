@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright (c) 2017-2018, FJTC
+# Copyright (c) 2017, FJTC
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -28,40 +28,48 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import sys
+import re
 import stcommon
 import argparse
 
-def fromFile(inp):
-	"""
-	Reads the file and returns its contents as a C/C++ constant.
-	"""
+def hex_to_int_array(s):
 	ret=[]
-	try:
-		b = inp.read(1)
-		while b != '':
-			ret.append('{0:02X}'.format(ord(b)))
-			b = inp.read(1)
-		return ret
-	except:
-		stcommon.die(2, 'Unable to open the file {0}\n'.format(inp_file))
+	for i in range(0, len(s), 2):
+		ret.append(int(s[i:i+2], base=16))
+	return ret
 
 # Parse arguments
 parser = argparse.ArgumentParser(
-	description='Converts binary files into C/C++ byte array constant.')
-parser.add_argument('-c', help='Read input from stdin.', 
-	default=False, action='store_true')
-parser.add_argument('file', nargs='?', help='File to be loaded.')
+	description='Applies bitwise XOR between two hexadecimal strings and outputs the result as an hexadecimal string.')
+parser.add_argument('hex_str_a', help='A valid hexadecimal string.')
+parser.add_argument('hex_str_b', help='A valid hexadecimal string.')
 if len(sys.argv) == 1:
 	parser.print_help()
 	sys.exit(2)
 else:
 	args = parser.parse_args()
 
-# Execute the process according to the arguments
-if args.c:
-	ret = fromFile(sys.stdin)
-else:
-	with open(args.file, 'rb') as inp:
-		ret = fromFile(inp)
-print(stcommon.list2carray(ret))
+# Validate the input
+if stcommon.is_hex_string(args.hex_str_a) == False:
+	stcommon.die(2, 'hex_str_a is not a valid hexadecimal string.\n')
+if stcommon.is_hex_string(str(args.hex_str_b)) == False:
+	stcommon.die(2, 'hex_str_a is not a valid hexadecimal string.\n')
+if len(args.hex_str_a) != len(args.hex_str_b):
+	stcommon.die(2, 'hex_str_a and hex_str_b must have the same length.\n')
+
+# Split in parts
+a = hex_to_int_array(args.hex_str_a)
+b = hex_to_int_array(args.hex_str_b)
+
+# Apply xor
+ret = []
+for i in range(len(a)):
+	ret.append(a[i] ^ b[i])
+
+# Array to hex
+s=''
+for v in ret:
+	s = s + '{0:02X}'.format(v)
+sys.stdout.write(s)
+sys.stdout.flush()
 

@@ -27,41 +27,35 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import sys
+import unittest
 import stcommon
-import argparse
 
-def fromFile(inp):
-	"""
-	Reads the file and returns its contents as a C/C++ constant.
-	"""
-	ret=[]
-	try:
-		b = inp.read(1)
-		while b != '':
-			ret.append('{0:02X}'.format(ord(b)))
-			b = inp.read(1)
-		return ret
-	except:
-		stcommon.die(2, 'Unable to open the file {0}\n'.format(inp_file))
+class STCommonTest(unittest.TestCase):
+	def test_list2carray(self):
+		s = stcommon.list2carray(['01'])
+		self.assertEquals('0x01', s)
 
-# Parse arguments
-parser = argparse.ArgumentParser(
-	description='Converts binary files into C/C++ byte array constant.')
-parser.add_argument('-c', help='Read input from stdin.', 
-	default=False, action='store_true')
-parser.add_argument('file', nargs='?', help='File to be loaded.')
-if len(sys.argv) == 1:
-	parser.print_help()
-	sys.exit(2)
-else:
-	args = parser.parse_args()
+		s = stcommon.list2carray(['01', '23'])
+		self.assertEquals('0x01, 0x23', s)
 
-# Execute the process according to the arguments
-if args.c:
-	ret = fromFile(sys.stdin)
-else:
-	with open(args.file, 'rb') as inp:
-		ret = fromFile(inp)
-print(stcommon.list2carray(ret))
+		s = stcommon.list2carray(['01', '23', '45', '67', '89'])
+		self.assertEquals('0x01, 0x23, 0x45, 0x67, 0x89', s)
+
+		s = stcommon.list2carray(['01', '23', '45', '67', '89', 'AB', 'CD', 'EF'])
+		self.assertEquals('0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF', s)
+
+		s = stcommon.list2carray(['01', '23', '45', '67', '89', 'AB', 'CD', 'EF', '01'])
+		self.assertEquals('0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF,\n0x01', s)
+
+	def test_is_hex_string(self):
+		self.assertTrue(stcommon.is_hex_string('0123456789abcdefABCDEF'))
+		self.assertFalse(stcommon.is_hex_string(''))
+		self.assertFalse(stcommon.is_hex_string('0'))
+		for i in range(len('0123456789abcdefABCDEF')):
+			s = '0123456789abcdefABCDEF'
+			s = s[:i] + 'x' + s[i + 1:]
+			self.assertFalse(stcommon.is_hex_string(s))
+
+if __name__ == '__main__':
+    unittest.main()
 

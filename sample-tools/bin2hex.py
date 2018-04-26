@@ -33,13 +33,13 @@ import argparse
 
 def fromFile(inp):
 	"""
-	Reads the file and returns its contents as a C/C++ constant.
+	Reads the file and returns its contents as a list of hexadecimal values.
 	"""
-	ret=[]
+	ret=''
 	try:
 		b = inp.read(1)
 		while b != '':
-			ret.append('{0:02X}'.format(ord(b)))
+			ret = ret + '{0:02X}'.format(ord(b))
 			b = inp.read(1)
 		return ret
 	except:
@@ -47,7 +47,7 @@ def fromFile(inp):
 
 # Parse arguments
 parser = argparse.ArgumentParser(
-	description='Converts binary files into C/C++ byte array constant.')
+	description='Converts binary files into an hexadecimal string.')
 parser.add_argument('-c', help='Read input from stdin.', 
 	default=False, action='store_true')
 parser.add_argument('file', nargs='?', help='File to be loaded.')
@@ -63,5 +63,6 @@ if args.c:
 else:
 	with open(args.file, 'rb') as inp:
 		ret = fromFile(inp)
-print(stcommon.list2carray(ret))
+sys.stdout.write(ret)
+sys.stdout.flush()
 

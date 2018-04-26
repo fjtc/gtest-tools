@@ -27,6 +27,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import sys
+import re
 
 def die(error_code, message = None):
 	"""Exits the program with the specified error code. If message is set,
@@ -43,10 +44,22 @@ def list2carray(l):
 		mod = i % 8
 		if (mod != 0):
 			ret = ret + ' '
-		ret = ret + l[i] + ','
+		ret = ret + '0x' + l[i] + ','
 		if (mod == 7):
 			ret = ret + '\n'
 	ret = ret.strip()
 	ret = ret[0:len(ret)-1]
 	return ret
+
+def is_hex_string(s):
+	"""Verifies if a given string is a valid hexadecimal value."""
+	return re.match('^(?:[0-9a-fA-F]{2})+$', s) != None
+
+def read_all_from_stdin():
+	s = ''
+	b = sys.stdin.read(1)
+	while b != '':
+		s = s + b
+		b = sys.stdin.read(1)
+	return s
 
